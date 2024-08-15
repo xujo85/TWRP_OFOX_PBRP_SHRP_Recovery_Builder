@@ -156,17 +156,25 @@ jobs:
     - name: Set Build Date # Needed for gh-releases
       run: |
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-
-    - name: Rename image file
+       
+    - name: Generate Build Statistics
+      if: always()
       run: |
-        IMG_PATH="android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}"
-        mv "${IMG_PATH}/${{ github.event.inputs.BUILD_TARGET }}.img" "${IMG_PATH}/${{ github.event.inputs.BUILD_TARGET }}_not_to_flash.img"
+        echo "Build completed in ${{ steps.build.outputs.duration }}" > build-stats.txt
+        echo "Total size of output files: $(du -sh ${{ env.OUT_DIR }} | cut -f1)" >> build-stats.txt
+    
+    - name: Upload Build Statistics
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-stats
+        path: build-stats.txt
 
     - name: Upload to Release
       uses: softprops/action-gh-release@master
       with:
         files: |
-          android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}_not_to_flash.img
+          android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
           android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/PBRP*.zip
           android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/ramdisk-recovery.*
         name: Unofficial PBRP for ${{ github.event.inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
