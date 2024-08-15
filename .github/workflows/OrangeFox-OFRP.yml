@@ -33,9 +33,9 @@ on:
         default: 'recovery'
         type: choice
         options:
-        - boot
-        - recovery
-        - vendorboot
+        - bootimage
+        - recoveryimage
+        - vendorbootimage
 
 jobs:
   build:
@@ -108,7 +108,7 @@ jobs:
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         set -e
-        lunch twrp_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}image
+        lunch twrp_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}
 
     - name: Set Build Date # Build date in UTC
       run: |
