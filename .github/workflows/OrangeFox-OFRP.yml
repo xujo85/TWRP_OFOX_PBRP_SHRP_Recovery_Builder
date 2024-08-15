@@ -14,11 +14,11 @@ on:
       DEVICE_TREE:
         description: 'Custom Recovery Tree'
         required: true
-        default: 'https://github.com/lazycodebuilder/recovery_rmx1851'
+        default: 'https://github.com/<username>/<repo_name>'
       DEVICE_TREE_BRANCH:
-        description: 'Custom Recovery Tree Branch'
+        description: 'Custom Recovery Tree Branch (use master if default)'
         required: true
-        default: 'android-14_ofrp'
+        default: 'your_branch_name'
       BUILD_TARGET:
         description: 'Specify your Build Target'
         required: true
@@ -28,15 +28,6 @@ on:
         - boot
         - recovery
         - vendorboot
-      LDCHECK:
-        description: 'Use LDCHECK'
-        required: false
-        default: 'false'
-        type: boolean
-      LDCHECKPATH:
-        description: 'Path of blobs to check' # Use it know what kind of dependencies your missing for decryption blobs.
-        required: true
-        default: 'system/bin/qseecomd'
 
 jobs:
   build:
@@ -50,14 +41,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Display Inputs
-      run: |
-        echo "Displaying variables/inputs."
-        echo "Manifest Branch: ${{ inputs.MANIFEST_BRANCH }}"
-        echo "Device Tree: ${{ inputs.DEVICE_TREE }}"
-        echo "Device Branch: ${{ inputs.DEVICE_TREE_BRANCH }}"
-        echo "Build Target: ${{ inputs.BUILD_TARGET }}image"
               
     - name: Clean-up
       uses: rokibhasansagar/slimhub_actions@main
@@ -70,7 +53,7 @@ jobs:
     - name: Build Environment
       run: |
         sudo apt install aria2 -y
-        git clone https://gitlab.com/OrangeFox/misc/scripts
+        git clone https://gitlab.com/OrangeFox/misc/scripts.git
         cd scripts
         sudo bash setup/android_build_env.sh
       
@@ -78,59 +61,18 @@ jobs:
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
         cd ${GITHUB_WORKSPACE}/OrangeFox
-        git config --global user.name "lazycodebuilder"
-        git config --global user.email "154446636+lazycodebuilder@users.noreply.github.com"
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         git clone https://gitlab.com/OrangeFox/sync.git
-        if [ ${{ inputs.MANIFEST_BRANCH }} == '11.0' ] || [ ${{ inputs.MANIFEST_BRANCH }} == '12.1' ]; then
-            echo "Sync fox_${{ inputs.MANIFEST_BRANCH }} branch"
-            echo "CHECK_LEGACY_BRANCH=false" >> $GITHUB_ENV
-            cd sync
-            ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-        else
-            echo "Sync legacy fox_${{ inputs.MANIFEST_BRANCH }} branch"
-            echo "CHECK_LEGACY_BRANCH=true" >> $GITHUB_ENV
-            cd sync/legacy
-            ./orangefox_sync_legacy.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-        fi
-
+        cd sync
+        ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+      
     - name: Clone Device Tree
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./device_tree
-        cd device_tree
+        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
+        cd ${{ github.event.inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
-    - name: Extracting variables from .mk file
-      run: |
-        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/device_tree
-        # Initialize variables
-        DEVICE_MAKEFILE=""
-        DEVICE_DIRECTORY=""
-        DEVICE_NAME=""
-        # Loop through each .mk file in the current directory
-        for file in *.mk; do
-            # Extract variables using sed
-            makefile=$(sed -n 's/^[[:space:]]*PRODUCT_NAME[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            brand=$(sed -n 's/^[[:space:]]*PRODUCT_BRAND[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            codename=$(sed -n 's/^[[:space:]]*PRODUCT_DEVICE[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            if [[ -n "$makefile" && -n "$brand" && -n "$codename" ]]; then
-                DEVICE_MAKEFILE="$makefile"
-                DEVICE_DIRECTORY="device/$brand"
-                DEVICE_NAME="$codename"
-                echo "DEVICE_MAKEFILE=${DEVICE_MAKEFILE}" >> $GITHUB_ENV
-                echo "DEVICE_NAME=${DEVICE_NAME}" >> $GITHUB_ENV
-                echo "DEVICE_DIRECTORY=${DEVICE_DIRECTORY}" >> $GITHUB_ENV
-                break
-            fi
-        done
-        # Navigate to the parent directory
-        cd ../
-        # Create the necessary directories
-        echo "Creating directory: $DEVICE_DIRECTORY"
-        mkdir -p "$DEVICE_DIRECTORY"
-        # Move device_tree folder to device_directory and rename it to $DEVICE_NAME
-        echo "Moving device_tree to $DEVICE_DIRECTORY/$DEVICE_NAME"
-        mv device_tree "$DEVICE_DIRECTORY"/"$DEVICE_NAME"
 
     - name: Installing python2 for legacy builds
       if: env.CHECK_LEGACY_BRANCH == 'true'
@@ -139,20 +81,19 @@ jobs:
 
     - name: Building OrangeFox
       run: |
-        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
         set +e
+        export USE_CCACHE=1
+        export CCACHE_EXEC=/usr/bin/ccache
+        sed -i 's/return sandboxConfig\.working/return false/g' build/soong/ui/build/sandbox_linux.go
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         set -e
-        if [ ${{ inputs.MANIFEST_BRANCH }} == '11.0' ] || [ ${{ inputs.MANIFEST_BRANCH }} == '12.1' ]; then
-            lunch twrp_${{ env.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
-        else
-            lunch omni_${{ env.DEVICE_NAME }}-eng && make clean && mka ${{ inputs.BUILD_TARGET }}image
-        fi
+        lunch twrp_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}image
 
-    - name: Set Build Date # For Build Date Info, currently using Asia/Manila
+    - name: Set Build Date # Build date in UTC
       run: |
-        echo "BUILD_DATE=$(TZ=Asia/Manila date +%Y%m%d)" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
 
     - name: Check if Recovery Exist
       run: |
@@ -187,14 +128,3 @@ jobs:
           Commit: Most recent [commit](${{ inputs.DEVICE_TREE }}/commit/${{ env.COMMIT_ID }}) during building.
           MD5 (img): ${{ env.MD5_IMG }}
           MD5 (zip): ${{ env.MD5_ZIP }}
-          
-    - name: Run LDCheck
-      if: inputs.LDCHECK == 'true'
-      run: |
-        cd tools
-        mv -n libneeds ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/recovery/root/
-        mv -n ldcheck ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/recovery/root/
-        cd ../OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/recovery/root
-        python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
-        echo "Done checking missing dependencies. Review, and reconfigure your tree."
-      continue-on-error: true
