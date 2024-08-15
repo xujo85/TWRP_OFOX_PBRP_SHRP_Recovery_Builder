@@ -23,4 +23,4 @@ If there are any issues relating the build tree info (not the workflow file conf
  - [that1](https://github.com/that1)
  - [carlodandan](https://github.com/carlodandan)
  - And to all Contributors in every repositories and scripts I used.
- - [Original recovery tree and lazycodebuilder](https://github.com/lazycodebuilder/Lazy_Action-Recoverys-Builder)
+ - [Recovery builder (derived from) and lazycodebuilder](https://github.com/lazycodebuilder/Lazy_Action-Recoverys-Builder)
