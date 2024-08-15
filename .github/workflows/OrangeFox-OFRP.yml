@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.repository.owner.id == github.event.sender.id
     env:
+      GITHUB_WORKSPACE: $(pwd)
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ORANGEFOX_ROOT: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
       OUT_DIR: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}
