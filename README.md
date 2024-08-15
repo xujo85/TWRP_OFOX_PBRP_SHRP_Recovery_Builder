@@ -1,6 +1,10 @@
 # Recovery Builder for |TWRP / PBRP / OFRP / SHRP|
 Compile your first custom recovery via Github Actions - with ldcheck setup.
 
+This repo comes from a long chain of forks and finally ended up with working shrp and some revamping of the workflow files.
+
+If there are any issues relating the build tree info (not the workflow file config entries), feel free to open a pull request.
+
 ## How to Use
 1. Fork this repository.
 
@@ -19,3 +23,4 @@ Compile your first custom recovery via Github Actions - with ldcheck setup.
  - [that1](https://github.com/that1)
  - [carlodandan](https://github.com/carlodandan)
  - And to all Contributors in every repositories and scripts I used.
+ - [Original recovery tree and lazycodebuilder](https://github.com/lazycodebuilder/Lazy_Action-Recoverys-Builder)
