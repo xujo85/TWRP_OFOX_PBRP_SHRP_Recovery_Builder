@@ -170,8 +170,6 @@ jobs:
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/SHRP*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
-            echo "Recovery out directory is empty."
-        fi
             echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
         fi
 
