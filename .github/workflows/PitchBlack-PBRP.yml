@@ -149,7 +149,7 @@ jobs:
         pushd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        if [ ${{ env.DEVICE_MAKEFILE }} != "pbrp" ]; then
+        if [ "${{ inputs.BUILD_TARGET }}" != "pbrp" ]; then
             lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ inputs.BUILD_TARGET }}image
         else
             lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ inputs.BUILD_TARGET }}
