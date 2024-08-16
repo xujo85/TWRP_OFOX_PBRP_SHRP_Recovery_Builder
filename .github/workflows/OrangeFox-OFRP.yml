@@ -43,10 +43,9 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.repository.owner.id == github.event.sender.id
     env:
-      GITHUB_WORKSPACE: $(pwd)
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ORANGEFOX_ROOT: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-      OUT_DIR: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}
+      ORANGEFOX_ROOT: OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+      OUT_DIR: OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}
 
     permissions:
       contents: write
@@ -71,8 +70,8 @@ jobs:
       
     - name: Set-up Manifest
       run: |
-        mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
-        cd ${GITHUB_WORKSPACE}/OrangeFox
+        mkdir -p OrangeFox
+        cd OrangeFox
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         git clone https://gitlab.com/OrangeFox/sync.git
@@ -90,7 +89,7 @@ jobs:
     - name: Clone Device Tree
       run: |
         cd ${{ env.ORANGEFOX_ROOT }}
-        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
+        git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
         cd ${{ github.event.inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
@@ -101,7 +100,7 @@ jobs:
 
     - name: Building OrangeFox
       run: |
-        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+        cd OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
         set +e
         export USE_CCACHE=1
         export CCACHE_EXEC=/usr/bin/ccache
@@ -118,13 +117,13 @@ jobs:
     - name: Check if Recovery Exist
       run: |
         cd ${{ env.ORANGEFOX_ROOT }}
-        if [ -f out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img ]; then
+        if [ -f out/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_IMG=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.zip ]; then
+        if [ -f out/target/product/${{ github.events.input.DEVICE_NAME }}/OrangeFox*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_ZIP=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
