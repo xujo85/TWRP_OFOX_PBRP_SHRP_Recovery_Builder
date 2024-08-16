@@ -28,14 +28,14 @@ on:
         required: true
         default: 'device/device`s_company/Codename'
       BUILD_TARGET:
-        description: 'Specify your Build Target'
+        description: 'Specify your Build Target' # The image suffix will be added later in build step.
         required: true
         default: 'recovery'
         type: choice
         options:
-        - bootimage
-        - recoveryimage
-        - vendorbootimage
+        - boot
+        - recovery
+        - vendorboot
 
 jobs:
   build:
@@ -45,7 +45,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ORANGEFOX_ROOT: OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-      OUT_DIR: OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ github.event.inputs.DEVICE_NAME }}
+      OUT_DIR: OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
 
     permissions:
       contents: write
@@ -89,8 +89,8 @@ jobs:
     - name: Clone Device Tree
       run: |
         cd ${{ env.ORANGEFOX_ROOT }}
-        git clone ${{ github.event.inputs.DEVICE_TREE }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
-        cd ${{ github.event.inputs.DEVICE_PATH }}
+        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
+        cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
     - name: Installing python2 for legacy builds
@@ -100,7 +100,7 @@ jobs:
 
     - name: Building OrangeFox
       run: |
-        cd ${{ env.ORANGEFOX_ROOT }}
+        pushd ${{ env.ORANGEFOX_ROOT }}
         set +e
         export USE_CCACHE=1
         export CCACHE_EXEC=/usr/bin/ccache
@@ -108,7 +108,8 @@ jobs:
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         set -e
-        lunch twrp_${{ github.event.inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ github.event.inputs.BUILD_TARGET }}
+        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
+        popd
 
     - name: Set Build Date # Build date in UTC
       run: |
@@ -116,13 +117,13 @@ jobs:
 
     - name: Check if Recovery Exist
       run: |
-        if [ -f ${{ env.OUT_DIR }}/OrangeFox*.img ]; then
+        if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f ${{ env.OUT_DIR }}/OrangeFox*.zip ]; then
+        if [ -f ${{ env.OUT_DIR }}/SHRP*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
