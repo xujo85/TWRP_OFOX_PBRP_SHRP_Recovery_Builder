@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.repository.owner.id == github.event.sender.id
     env:
-      OUT_DIR: android-recovery/out/target/product
+      OUTPUT_DIR: android-recovery/out/target/product
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
@@ -166,9 +166,9 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         files: |
-          ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/*.img
-          ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/SHRP*.zip
-          ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/ramdisk*.*
+          ${{ env.OUTPUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/*.img
+          ${{ env.OUTPUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/SHRP*.zip
+          ${{ env.OUTPUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/ramdisk*.*
         name: Unofficial SHRP For ${{ github.event.inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
