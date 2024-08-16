@@ -67,6 +67,11 @@ jobs:
         git clone https://gitlab.com/OrangeFox/misc/scripts.git
         cd scripts
         sudo bash setup/android_build_env.sh
+
+    - name: Setup ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        max-size: "10G"
       
     - name: Set-up Manifest # For github workspace use single {}
       run: |
