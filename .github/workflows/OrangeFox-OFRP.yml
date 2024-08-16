@@ -81,15 +81,7 @@ jobs:
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         git clone https://gitlab.com/OrangeFox/sync.git -b master
         cd sync
-        ./orangefox_sync.sh --branch ${{ github.event.inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-
-    - name: Cache ccache
-      uses: actions/cache@v3
-      with:
-        path: ~/.ccache
-        key: ccache-${{ runner.os }}-${{ github.sha }}
-        restore-keys: |
-          ccache-${{ runner.os }}-
+        ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
       
     - name: Clone Device Tree
       run: |
