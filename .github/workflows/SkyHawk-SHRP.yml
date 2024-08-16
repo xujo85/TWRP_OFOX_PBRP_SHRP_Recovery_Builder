@@ -179,11 +179,11 @@ jobs:
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
       
     - name: Upload to Release
-      if: always() && env.CHECK_IMG_IS_OK = 'true'
+      if: always() && env.CHECK_IMG_IS_OK == 'true'
       uses: softprops/action-gh-release@master
       with:
         files: |
-          ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img
+          ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/*.img
           ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/SHRP*.zip
           ${{ env.OUT_DIR }}/${{ github.event.inputs.DEVICE_NAME }}/ramdisk*.*
         name: Unofficial SHRP For ${{ github.event.inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
