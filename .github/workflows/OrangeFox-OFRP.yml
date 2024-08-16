@@ -118,13 +118,13 @@ jobs:
       run: |
         if [ -f ${{ env.OUT_DIR }}/OrangeFox*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
         if [ -f ${{ env.OUT_DIR }}/OrangeFox*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
