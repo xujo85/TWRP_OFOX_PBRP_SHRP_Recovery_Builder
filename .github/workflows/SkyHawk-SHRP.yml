@@ -159,18 +159,19 @@ jobs:
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
 
     - name: Check if the recovery exists
-      if: always()
       run: |
-        if [ -f out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img ]; then
+        if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img ]; then
+        if [ -f ${{ env.OUT_DIR }}/SHRP*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum out/target/product/${{ github.event.inputs.DEVICE_NAME }}/pbrp*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/SHRP*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
+            echo "Recovery out directory is empty."
+        fi
             echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
         fi
 
