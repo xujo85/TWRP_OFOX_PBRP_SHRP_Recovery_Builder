@@ -39,9 +39,9 @@ on:
         type: choice
         options:
         - pbrp
-        - bootimage
-        - recoveryimage
-        - vendorbootimage
+        - boot
+        - recovery
+        - vendorboot
 
 jobs:
   build:
@@ -151,24 +151,28 @@ jobs:
         cd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ github.event.inputs.BUILD_TARGET }}
+        if [ ${{ env.DEVICE_MAKEFILE }} != "pbrp" ]; then
+            lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ github.event.inputs.BUILD_TARGET }}image
+        else
+            lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ github.event.inputs.BUILD_TARGET }}
+        fi
 
     - name: Set Build Date # Needed for gh-releases
       run: |
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
-    - name: Check if Recovery Exist
-      if: always()
+   
+    - name: Check if the recovery exists # It makes the reovery.img and renames it to Orangefox*.img but the OG should also work
       run: |
-        if [ -f out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img ]; then
+        if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f android-recovery/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/${{ github.event.inputs.BUILD_TARGET }}.img ]; then
+        if [ -f ${{ env.OUT_DIR }}/pbrp*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum out/target/product/${{ github.event.inputs.DEVICE_NAME }}/pbrp*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/pbrp*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage (or pb_build.sh doesnt exist error is shown)"
         fi
