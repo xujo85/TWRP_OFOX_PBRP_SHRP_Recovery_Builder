@@ -187,7 +187,7 @@ jobs:
         path: build-stats.txt
 
     - name: Upload to Release
-      if: env.CHECK_IMG_IS_OK == 'true'
+      if: always() && env.CHECK_IMG_IS_OK == 'true'
       uses: softprops/action-gh-release@master
       with:
         files: |
