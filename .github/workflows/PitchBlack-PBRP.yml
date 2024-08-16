@@ -158,6 +158,7 @@ jobs:
         echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
     - name: Check if Recovery Exist
+      if: always()
       run: |
         if [ -f out/target/product/${{ env.DEVICE_NAME }}/OrangeFox*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
@@ -169,7 +170,7 @@ jobs:
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_ZIP=$(md5sum out/target/product/${{ github.event.inputs.DEVICE_NAME }}/pbrp*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
-            echo "Recovery out directory is empty."
+            echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage (or pb_build.sh doesnt exist error is shown)"
         fi
        
     - name: Generate Build Statistics
