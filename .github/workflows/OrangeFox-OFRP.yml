@@ -44,8 +44,8 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ORANGEFOX_ROOT: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-      OUT_DIR: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
+      ORANGEFOX_ROOT: ${{ env.GITHUB_WORKSPACE }}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+      OUT_DIR: ${{ env.GITHUB_WORKSPACE }}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
 
     permissions:
       contents: write
