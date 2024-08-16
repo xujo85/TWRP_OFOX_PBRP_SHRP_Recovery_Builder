@@ -159,6 +159,7 @@ jobs:
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
 
     - name: Check if the recovery exists
+      if: always()
       run: |
         if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
