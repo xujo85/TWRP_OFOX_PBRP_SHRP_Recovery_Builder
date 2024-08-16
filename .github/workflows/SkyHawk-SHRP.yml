@@ -144,7 +144,6 @@ jobs:
         fi
       continue-on-error: true
 
-
     - name: Installing python2 for legacy builds
       if: env.CHECK_LEGACY_BRANCH == 'true'
       run: |
@@ -157,24 +156,6 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         lunch ${{ env.DEVICE_MAKEFILE }}-eng && make clean && mka ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
         echo "Done building your ${{ github.event.inputs.BUILD_TARGET }}.img"
-
-    - name: Check if the recovery exists
-      if: always()
-      run: |
-        img_file=$(find "${{ env.OUT_DIR }}" -name "${{ inputs.BUILD_TARGET }}*.img" -print -quit)
-        zip_file=$(find "${{ env.OUT_DIR }}" -name "pbrp*.zip" -print -quit)
-        if [ -f "$img_file" ]; then
-            echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum "$img_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
-        else
-            echo "Recovery out directory is empty."
-        fi
-        if [ -f "$zip_file" ]; then
-            echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum "$zip_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
-        else
-            echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
-        fi
 
     - name: Set Build Date # Output will be use in Release
       run: |
