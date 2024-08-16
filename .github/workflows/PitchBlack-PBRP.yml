@@ -164,6 +164,7 @@ jobs:
 
    
     - name: Check if the recovery exists
+      if: always()
       run: |
         img_file=$(find "${{ env.OUT_DIR }}" -name "${{ inputs.BUILD_TARGET }}*.img" -print -quit)
         zip_file=$(find "${{ env.OUT_DIR }}" -name "pbrp*.zip" -print -quit)
