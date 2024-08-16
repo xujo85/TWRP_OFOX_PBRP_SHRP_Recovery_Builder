@@ -115,19 +115,19 @@ jobs:
       run: |
         echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
 
-    - name: Check if Recovery Exist
+    - name: Check if the recovery exists # It makes the reovery.img and renames it to Orangefox*.img but the OG should also work
       run: |
         if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f ${{ env.OUT_DIR }}/SHRP*.zip ]; then
+        if [ -f ${{ env.OUT_DIR }}/Orangefox*.zip ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/OrangeFox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/Orangefox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
-            echo "Recovery out directory is empty."
+            echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
         fi
 
     - name: Upload to Release
