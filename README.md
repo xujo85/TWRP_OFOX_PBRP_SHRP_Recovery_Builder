@@ -1,5 +1,5 @@
 # Recovery Builder for |TWRP / PBRP / OFRP / SHRP|
-Compile your first custom recovery via Github Actions - with ldcheck setup.
+Compile your first custom recovery via Github Actions.
 
 This repo comes from a long chain of forks and finally ended up with working shrp and some revamping of the workflow files.
 
