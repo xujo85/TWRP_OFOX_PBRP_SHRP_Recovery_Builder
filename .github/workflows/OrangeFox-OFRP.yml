@@ -107,17 +107,20 @@ jobs:
       run: |
         echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
 
-    - name: Check if the recovery exists # It makes the reovery.img and renames it to Orangefox*.img but the OG should also work
+    - name: Check if the recovery exists # It makes the recovery.img and renames it to Orangefox*.img but the OG should also work
+      if: always()
       run: |
-        if [ -f ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img ]; then
+        img_file=$(find "${{ env.OUT_DIR }}" -name "${{ inputs.BUILD_TARGET }}*.img" -print -quit)
+        zip_file=$(find "${{ env.OUT_DIR }}" -name "Orangefox*.zip" -print -quit)
+        if [ -f "$img_file" ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_IMG=$(md5sum ${{ env.OUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum "$img_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "Recovery out directory is empty."
         fi
-        if [ -f ${{ env.OUT_DIR }}/Orangefox*.zip ]; then
+        if [ -f "$zip_file" ]; then
             echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
-            echo "MD5_ZIP=$(md5sum ${{ env.OUT_DIR }}/Orangefox*.zip | cut -d ' ' -f 1)" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum "$zip_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
         else
             echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
         fi
