@@ -45,7 +45,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ORANGEFOX_ROOT: ${{ github.workspace }}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
-      OUT_DIR: ${{ github.workspace }}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
+      OUTPUT_DIR: ${{ github.workspace }}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/out/target/product/${{ inputs.DEVICE_NAME }}
 
     permissions:
       contents: write
@@ -107,14 +107,33 @@ jobs:
       run: |
         echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
 
+    - name: Check if the recovery exists # It makes the recovery.img and renames it to Orangefox*.img but the OG should also work
+      if: always()
+      run: |
+        img_file=$(find "${{ env.OUTPUT_DIR }}" -name "${{ inputs.BUILD_TARGET }}*.img" -print -quit)
+        zip_file=$(find "${{ env.OUTPUT_DIR }}" -name "Orangefox*.zip" -print -quit)
+        if [ -f "$img_file" ]; then
+            echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
+            echo "MD5_IMG=$(md5sum "$img_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
+        else
+            echo "Recovery out directory is empty."
+        fi
+        if [ -f "$zip_file" ]; then
+            echo "CHECK_ZIP_IS_OK=true" >> $GITHUB_ENV
+            echo "MD5_ZIP=$(md5sum "$zip_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
+        else
+            echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
+        fi
+
     - name: Upload to Release
+      if: env.CHECK_IMG_IS_OK == 'true' && env.CHECK_ZIP_IS_OK == 'true'
       uses: softprops/action-gh-release@master
       with:
         files: |
-          ${{ env.OUT_DIR }}/OrangeFox*.img
-          ${{ env.OUT_DIR }}/OrangeFox*.img.tar
-          ${{ env.OUT_DIR }}/OrangeFox*.zip
-          ${{ env.OUT_DIR }}/ramdisk-recovery.*
+          ${{ env.OUTPUT_DIR }}/OrangeFox*.img
+          ${{ env.OUTPUT_DIR }}/OrangeFox*.img.tar
+          ${{ env.OUTPUT_DIR }}/OrangeFox*.zip
+          ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
         name: Unofficial OrangeFox for ${{ env.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
