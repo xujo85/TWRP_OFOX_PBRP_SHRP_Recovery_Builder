@@ -96,26 +96,29 @@ jobs:
     - name: Initialize Repo
       run: |
         mkdir android-recovery
-        cd android-recovery
+        pushd android-recovery
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         repo init --depth=1 -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${{ inputs.MANIFEST_BRANCH }}
+        popd
 
     - name: Repo Sync
       run: |
-        cd android-recovery
+        pushd android-recovery
         repo sync -j$(nproc --all) --force-sync
+        popd
       
     - name: Clone Device Tree
       run: |
-        cd android-recovery
+        pushd android-recovery
         git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
         cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        popd
 
     - name: Check Build Makefile
       run: |
-        cd android-recovery
+        pushd android-recovery
         if [ -f ${{ inputs.DEVICE_PATH }}/twrp_${{ inputs.DEVICE_NAME}}.mk ]; then
             echo "DEVICE_MAKEFILE=twrp_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
         elif [ -f ${{ inputs.DEVICE_PATH }}/omni_${{ inputs.DEVICE_NAME}}.mk ]; then
@@ -125,6 +128,7 @@ jobs:
         else
             echo "No recovery makefile file found!"
         fi
+        popd
       continue-on-error: true
       
     - name: Installing python2 for legacy builds
@@ -134,14 +138,15 @@ jobs:
 
     - name: Fixed Missing Fonts
       run: |
-        cd android-recovery
+        pushd android-recovery
         mkdir external/noto-fonts/other && cd external/noto-fonts/other
         wget https://github.com/cd-Crypton/custom-recovery-extras/raw/main/missing-font.zip
         unzip -o missing-font.zip
+        popd
 
     - name: Building PitchBlack
       run: |
-        cd android-recovery
+        pushd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         if [ ${{ env.DEVICE_MAKEFILE }} != "pbrp" ]; then
@@ -149,6 +154,7 @@ jobs:
         else
             lunch ${{ env.DEVICE_MAKEFILE }}-eng && mka ${{ inputs.BUILD_TARGET }}
         fi
+        popd
 
     - name: Set Build Date # Needed for gh-releases
       run: |
