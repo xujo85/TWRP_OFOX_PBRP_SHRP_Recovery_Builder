@@ -126,12 +126,12 @@ jobs:
         fi
 
     - name: Upload to Release
-      if: env.CHECK_IMG_IS_OK == 'true' && env.CHECK_ZIP_IS_OK == 'true'
+      if: env.CHECK_IMG_IS_OK == 'true'
       uses: softprops/action-gh-release@master
       with:
         files: |
           ${{ env.OUTPUT_DIR }}/OrangeFox*.img
-          ${{ env.OUTPUT_DIR }}/OrangeFox*.img.tar
+          ${{ env.OUTPUT_DIR }}/OrangeFox*.tar
           ${{ env.OUTPUT_DIR }}/OrangeFox*.zip
           ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
         name: Unofficial OrangeFox for ${{ env.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
