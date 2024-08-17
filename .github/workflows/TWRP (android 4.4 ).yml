@@ -57,18 +57,18 @@ jobs:
     env:
       LC_ALL: "C.UTF-8"
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-      OUTPUT_DIR: workspace/out/target/product
+      OUTPUT_DIR: android-recovery/out/target/product
     steps:
     - name: Display Run Parameters
       run: |
         echo "::group::User Environment Variables"
-        echo "Manifest URL: ${{ github.event.inputs.MANIFEST_URL }}"
-        echo "Manifest Branch: ${{ github.event.inputs.MANIFEST_BRANCH }}"
-        echo "Device Tree URL: ${{ github.event.inputs.DEVICE_TREE_URL }}"
-        echo "Device Tree Branch: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
-        echo "Device Path: ${{ github.event.inputs.DEVICE_PATH }}"
-        echo "Device Name: ${{ github.event.inputs.DEVICE_NAME }}"
-        echo "Makefile Name: ${{ github.event.inputs.MAKEFILE_NAME }}"
+        echo "Manifest URL: ${{ inputs.MANIFEST_URL }}"
+        echo "Manifest Branch: ${{ inputs.MANIFEST_BRANCH }}"
+        echo "Device Tree URL: ${{ inputs.DEVICE_TREE_URL }}"
+        echo "Device Tree Branch: ${{ inputs.DEVICE_TREE_BRANCH }}"
+        echo "Device Path: ${{ inputs.DEVICE_PATH }}"
+        echo "Device Name: ${{ inputs.DEVICE_NAME }}"
+        echo "Makefile Name: ${{ inputs.MAKEFILE_NAME }}"
         echo "::endgroup::"
  
     - name: Check Out
@@ -108,37 +108,37 @@ jobs:
       
     - name: Initialize repo
       run: |
-        mkdir workspace
-        cd workspace
-        echo "workspace-folder=$(pwd)" >> $GITHUB_OUTPUT
+        mkdir android-recovery
+        cd android-recovery
+        echo "android-recovery-folder=$(pwd)" >> $GITHUB_OUTPUT
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-        repo init --depth=1 -u ${{ github.event.inputs.MANIFEST_URL }} -b ${{ github.event.inputs.MANIFEST_BRANCH }}
+        repo init --depth=1 -u ${{ inputs.MANIFEST_URL }} -b ${{ inputs.MANIFEST_BRANCH }}
       id: pwd
           
     - name: Repo Sync
       run: |
         repo sync -j$(nproc --all) --force-sync
-      working-directory: workspace
+      working-directory: android-recovery
       
     - name: Clone device tree
       run: |
-        git clone ${{ github.event.inputs.DEVICE_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
-      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+        git clone ${{ inputs.DEVICE_TREE_URL }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
+      working-directory: ${{ steps.pwd.outputs.android-recovery-folder }}
 
     - name: Clone common tree
       if: |
-        github.event.inputs.COMMON_TREE_URL != null
-        && github.event.inputs.COMMON_PATH != null
+        inputs.COMMON_TREE_URL != null
+        && inputs.COMMON_PATH != null
       run: |
-        git clone ${{ github.event.inputs.COMMON_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.COMMON_PATH }}
-      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+        git clone ${{ inputs.COMMON_TREE_URL }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.COMMON_PATH }}
+      working-directory: ${{ steps.pwd.outputs.android-recovery-folder }}
 
     - name: Sync Device Dependencies
       run: |
-        bash ${GITHUB_WORKSPACE}/scripts/convert.sh ${{ github.event.inputs.DEVICE_PATH }}/${{ steps.buildtree.outputs.value }}.dependencies
+        bash ${GITHUB_WORKSPACE}/scripts/convert.sh ${{ inputs.DEVICE_PATH }}/${{ steps.buildtree.outputs.value }}.dependencies
         repo sync -j$(nproc --all)
-      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+      working-directory: ${{ steps.pwd.outputs.android-recovery-folder }}
       continue-on-error: true
 
 #    - name: Set Swap Space
@@ -157,27 +157,27 @@ jobs:
       run: |
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && make recoveryimage -j$(nproc --all)
-      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+        lunch ${{ inputs.MAKEFILE_NAME }}-eng && make clean && make recoveryimage -j$(nproc --all)
+      working-directory: ${{ steps.pwd.outputs.android-recovery-folder }}
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
       with:
         files: | 
-          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/recovery.img
-          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/*.zip
-          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
-        name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.run_id }}
+          ${{ env.OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery.img
+          ${{ env.OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/*.zip
+          ${{ env.OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/*vendor*.img
+        name: ${{ inputs.DEVICE_NAME }}-${{ github.run_id }}
         tag_name: ${{ github.run_id }}
         body: |
-          Manifest: ${{ github.event.inputs.MANIFEST_BRANCH }}
-          Device: ${{ github.event.inputs.DEVICE_NAME }}
-          Device tree & Branch: ${{ github.event.inputs.DEVICE_TREE_URL }} - ${{ github.event.inputs.DEVICE_TREE_BRANCH }}
+          Manifest: ${{ inputs.MANIFEST_BRANCH }}
+          Device: ${{ inputs.DEVICE_NAME }}
+          Device tree & Branch: ${{ inputs.DEVICE_TREE_URL }} - ${{ inputs.DEVICE_TREE_BRANCH }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run LDCheck
-      if: inputs.LDCHECK == 'true'
+      if: inputs.LDCHECK == true
       run: |
         cd tools
         mv -n libneeds ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root/
