@@ -9,12 +9,25 @@ If there are any issues relating the build tree info (not the workflow file conf
 1. Fork this repository.
 
 2. Go to `Action` tab > `All workflows` > Pick which Build you need (`TWRP or PBRP or OFRP or SHRP`) > `Run workflow`, then pick required information from each drop-down list:
- - Manifest Branch (*12.1, *11.0, *10.0, *9.0, *8.1, *7.1, *6.0, etc.)
+ - Manifest Branch (*12.1, *11.0, *10.0, *9.0, *8.1, *7.1, *6.0, 4.4 only for twrp, etc.)
  - Device Tree (Your device tree repository link)
  - Device Tree Branch (Your device tree repository branch)
  - Build Target (boot, reecovery, vendorboot)
+
+
+## About LDCHECK
+
+  You can use LDCHECK to get info about dependencies or drivers that are missing for encryption, and help in looking about which drivers would be needed from your root folders. 
+  You can check out the wiki (Currently WIP, planning to BoardConfig flags based on manifest-branch, ways to debug (like finding .xml files), ) where you can add a path to a LDCHECK file,, as well as your device, processor info (might make it more specific later)
+
  - LDCHECK (path to your target binary file, ie. `system/bin/qseecomd`)
    - If you are building manually/locally and you want to use ldcheck for checking dependencies, visit [THIS](https://github.com/TeamWin/android_device_qcom_twrp-common/tree/android-11#using-ldcheck-to-find-dependencies) this for guide.
+
+## Notes
+
+> Some of PBRP's branches have missing pb_build.sh files (like 9.0), so the build will fail, but you can still flash the recovery.img and it will be uploaded to releases. For the .zips, you can go to PBRP's vendor utils repo and find them there in PBRP/tools (location might wary).
+> 
+> LDCHECK is only on SHRP as i didnt knnow anything abt it in the start so thought it would be complex to maintain, (want to keep the .yml as simple as possible) but it just checks for broken links and seems fairly harmless so will add it for others later.
 
 ## Thanks/Credits
  - [CaptainThrowback](https://github.com/CaptainThrowback)
