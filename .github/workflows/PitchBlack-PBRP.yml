@@ -158,7 +158,7 @@ jobs:
 
     - name: Set Build Date # Needed for gh-releases
       run: |
-        echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
 
    
     - name: Check if the recovery exists
