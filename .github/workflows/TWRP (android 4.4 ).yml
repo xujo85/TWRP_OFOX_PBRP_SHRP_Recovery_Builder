@@ -48,6 +48,7 @@ jobs:
     env:
       LC_ALL: "C.UTF-8"
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+      OUTPUT_DIR: workspace/out/target/product
     steps:
     - name: Display Run Parameters
       run: |
@@ -154,9 +155,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: | 
-          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/recovery.img
-          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*.zip
-          workspace/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
+          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/recovery.img
+          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/*.zip
+          ${{ OUTPUT_DIR}}/${{ github.event.inputs.DEVICE_NAME }}/*vendor*.img
         name: ${{ github.event.inputs.DEVICE_NAME }}-${{ github.run_id }}
         tag_name: ${{ github.run_id }}
         body: |
@@ -165,3 +166,14 @@ jobs:
           Device tree & Branch: ${{ github.event.inputs.DEVICE_TREE_URL }} - ${{ github.event.inputs.DEVICE_TREE_BRANCH }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run LDCheck
+      if: inputs.LDCHECK == 'true'
+      run: |
+        cd tools
+        mv -n libneeds ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root/
+        mv -n ldcheck ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root/
+        cd ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root
+        python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
+        echo "Done checking missing dependencies. Review, and reconfigure your tree."
+      continue-on-error: true
