@@ -156,9 +156,9 @@ jobs:
       if: inputs.LDCHECK == 'true'
       run: |
         cd tools
-        mv -n libneeds ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root/
-        mv -n ldcheck ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root/
-        cd ${GITHUB_WORKSPACE}/${{OUTPUT_DIR}}/${{ inputs.DEVICE_NAME }}/recovery/root
+        mv -n libneeds ${GITHUB_WORKSPACE}/${{ env.OUTPUT_DIR }}/${{ inputs.DEVICE_NAME }}/recovery/root/
+        mv -n ldcheck ${GITHUB_WORKSPACE}/${{ env.OUTPUT_DIR }}/${{ inputs.DEVICE_NAME }}/recovery/root/
+        cd ${GITHUB_WORKSPACE}/${{ env.OUTPUT_DIR }}/${{ inputs.DEVICE_NAME }}/recovery/root
         python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
         echo "Done checking missing dependencies. Review, and reconfigure your tree."
       continue-on-error: true
