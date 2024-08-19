@@ -1,7 +1,9 @@
 # Recovery Builder for |TWRP / PBRP / OFRP / SHRP|
 Compile your first custom recovery via Github Actions.
 
-This repo comes from a long chain of forks and finally ended up with working shrp and some revamping of the workflow files to work for older android devices (tested with 9.0).
+This repo comes from a long chain of forks and finally ended up with working shrp and some revamping of the workflow files to work for older android devices (tested with 9.0). 
+
+It uses github noreply account (if u dont know what that is, read the last section in notes).
 
 If there are any issues relating the build tree info (not the workflow file config entries), feel free to open a pull request.
 
@@ -25,9 +27,10 @@ If there are any issues relating the build tree info (not the workflow file conf
 
 ## Notes
 
-> Some of PBRP's branches have missing pb_build.sh files (like 9.0), so the build will fail, but you can still flash the recovery.img and it will be uploaded to releases. For the .zips, you can go to PBRP's vendor utils repo and find them there in PBRP/tools (location might wary).
-> 
-> LDCHECK is only on SHRP as i didnt knnow anything abt it in the start so thought it would be complex to maintain, (want to keep the .yml as simple as possible) but it just checks for broken links and seems fairly harmless so will add it for others later.
+- Some of PBRP's branches have missing pb_build.sh files (like 9.0), so the build will fail, but you can still flash the recovery.img and it will be uploaded to releases. For the .zips, you can go to PBRP's vendor utils repo and find them there in PBRP/tools (location might wary).
+- LDCHECK is only on SHRP as i didnt knnow anything abt it in the start so thought it would be complex to maintain, (want to keep the .yml as simple as possible) but it just checks for broken links and seems fairly harmless so will add it for others later.
+- Why ubuntu-20.04? Because python-is-python2 is replaced with python-is-python3 past 20.04.
+- If you created your account on GitHub.com after July 18, 2017, your noreply email address for GitHub is an ID number and your username in the form of ID+USERNAME@users.noreply.github.com. If you created your account on GitHub.com prior to July 18, 2017, and enabled Keep my email address private prior to that date, your noreply email address from GitHub is USERNAME@users.noreply.github.com. You can get an ID-based noreply email address for GitHub by selecting (or deselecting and reselecting) Keep my email address private in your email settings.
 
 ## Thanks/Credits
  - [CaptainThrowback](https://github.com/CaptainThrowback)
