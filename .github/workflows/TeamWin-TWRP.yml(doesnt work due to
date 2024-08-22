@@ -22,11 +22,23 @@ on:
       DEVICE_TREE:
         description: 'Custom Recovery Tree' # Your already made Device Tree for TWRP
         required: true
-        default: 'https://github.com/lazycodebuilder/recovery_rmx1851'
+        default: 'https://github.com/username/repo'
       DEVICE_TREE_BRANCH:
         description: 'Custom Recovery Tree Branch' # Your Device Tree Branch, make sure it's right.
         required: true
-        default: 'android-14'
+        default: 'enter_your_branch'
+      DEVICE_PATH:
+        description: 'DEVICE_PATH'
+        required: true
+        default: 'device/'
+      DEVICE_NAME:
+        description: 'DEVICE_NAME'
+        required: true
+        default: ''
+      MAKEFILE_NAME:
+        description: 'MAKEFILE_NAME (without including .mk, Example: omni_7304F)'
+        required: true
+        default: 'omni_'
       BUILD_TARGET:
         description: 'Specify your Build Target' # Pick among boot, recovery and vendor_boot
         required: true
@@ -59,14 +71,6 @@ jobs:
     - name: Check Out
       uses: actions/checkout@v4
       
-    - name: Display Inputs
-      run: |
-        echo "Displaying variables/inputs."
-        echo "Manifest Branch: ${{ inputs.MANIFEST_BRANCH }}"
-        echo "Device Tree: ${{ inputs.DEVICE_TREE }}"
-        echo "Device Branch: ${{ inputs.DEVICE_TREE_BRANCH }}"
-        echo "Build Target: ${{ inputs.BUILD_TARGET }}image"
-
     - name: Cleanup
       uses: rokibhasansagar/slimhub_actions@main
       
@@ -120,41 +124,8 @@ jobs:
     - name: Clone Device Tree
       run: |
         cd android-recovery
-        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./device_tree
-        cd device_tree
+        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
-    - name: Extracting variables from .mk file
-      run: |
-        cd android-recovery/device_tree
-        # Initialize variables
-        DEVICE_MAKEFILE=""
-        DEVICE_DIRECTORY=""
-        DEVICE_NAME=""
-        # Loop through each .mk file in the current directory
-        for file in *.mk; do
-            # Extract variables using sed
-            makefile=$(sed -n 's/^[[:space:]]*PRODUCT_NAME[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            brand=$(sed -n 's/^[[:space:]]*PRODUCT_BRAND[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            codename=$(sed -n 's/^[[:space:]]*PRODUCT_DEVICE[[:space:]]*:=\s*\(.*\)/\1/p' "$file")
-            if [[ -n "$makefile" && -n "$brand" && -n "$codename" ]]; then
-                DEVICE_MAKEFILE="$makefile"
-                DEVICE_DIRECTORY="device/$brand"
-                DEVICE_NAME="$codename"
-                echo "DEVICE_MAKEFILE=${DEVICE_MAKEFILE}" >> $GITHUB_ENV
-                echo "DEVICE_NAME=${DEVICE_NAME}" >> $GITHUB_ENV
-                echo "DEVICE_DIRECTORY=${DEVICE_DIRECTORY}" >> $GITHUB_ENV
-                break
-            fi
-        done
-        # Navigate to the parent directory
-        cd ../
-        # Create the necessary directories
-        echo "Creating directory: $DEVICE_DIRECTORY"
-        mkdir -p "$DEVICE_DIRECTORY"
-        # Move device_tree folder to device_directory and rename it to $DEVICE_NAME
-        echo "Moving device_tree to $DEVICE_DIRECTORY/$DEVICE_NAME"
-        mv device_tree "$DEVICE_DIRECTORY"/"$DEVICE_NAME"
 
     - name: Installing python2 for legacy builds
       if: env.CHECK_LEGACY_BRANCH == 'true'
@@ -166,7 +137,7 @@ jobs:
         cd android-recovery
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
-        lunch ${{ env.DEVICE_MAKEFILE }}-eng && make clean && make ${{ inputs.BUILD_TARGET }}image -j$(nproc --all)
+        lunch ${{ inputs.MAKEFILE_NAME }}-eng && make clean && make ${{ inputs.BUILD_TARGET }}image -j$(nproc --all)
         echo "Done building your ${{ inputs.BUILD_TARGET }}.img"
 
     - name: Set build target for upload
@@ -188,10 +159,10 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         files: |
-          android-recovery/out/target/product/${{ env.DEVICE_NAME }}/${{ env.BUILD_TARGET_NAME }}.img
-          android-recovery/out/target/product/${{ env.DEVICE_NAME }}/*installer*zip
-          android-recovery/out/target/product/${{ env.DEVICE_NAME }}/ramdisk-recovery.*
-        name: Unofficial TWRP for ${{ env.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
+          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/${{ inputs.BUILD_TARGET }}.img
+          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/*installer*zip
+          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/ramdisk-recovery.*
+        name: Unofficial TWRP for ${{ inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
           Build: ${{ inputs.MANIFEST_BRANCH }}
@@ -202,9 +173,9 @@ jobs:
       if: inputs.LDCHECK == 'true'
       run: |
         cd tools
-        mv -n libneeds ${GITHUB_WORKSPACE}/android-recovery/out/target/product/${{ env.DEVICE_NAME }}/recovery/root/
-        mv -n ldcheck ${GITHUB_WORKSPACE}/android-recovery/out/target/product/${{ env.DEVICE_NAME }}/recovery/root/
-        cd ../android-recovery/out/target/product/${{ env.DEVICE_NAME }}/recovery/root
+        mv -n libneeds ${GITHUB_WORKSPACE}/android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/
+        mv -n ldcheck ${GITHUB_WORKSPACE}/android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/
+        cd ../android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root
         python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
         echo "Done checking missing dependencies. Review, and reconfigure your tree."
       continue-on-error: true
