@@ -147,11 +147,10 @@ jobs:
 
     - name: Fixed Missing Fonts
       run: |
-        pushd android-recovery
+        cd android-recovery
         mkdir external/noto-fonts/other && cd external/noto-fonts/other
         wget https://github.com/cd-Crypton/custom-recovery-extras/raw/main/missing-font.zip
         unzip -o missing-font.zip
-        popd
 
     - name: Building PitchBlack
       run: |
@@ -187,19 +186,6 @@ jobs:
         else
             echo "::warning::The zip file isn't present but make sure the image is from only after 100% completion in build stage"
         fi
-       
-    - name: Generate Build Statistics
-      if: always()
-      run: |
-        echo "Build completed in ${{ steps.build.outputs.duration }}" > build-stats.txt
-        echo "Total size of output files: $(du -sh ${{ env.OUTPUT_DIR }} | cut -f1)" >> build-stats.txt
-    
-    - name: Upload Build Statistics
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-stats
-        path: build-stats.txt
 
     - name: Upload to Release
       if: always() && (env.CHECK_IMG_IS_OK == 'true' || env.CHECK_ZIP_IS_OK == 'true')
