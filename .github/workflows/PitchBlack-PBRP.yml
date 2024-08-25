@@ -172,8 +172,8 @@ jobs:
     - name: Check if the recovery exists
       if: always()
       run: |
-        img_file=$(find "${{ env.OUTPUT_DIR }}" -name "${{ inputs.BUILD_TARGET }}*.img" -print -quit)
-        zip_file=$(find "${{ env.OUTPUT_DIR }}" -name "pbrp*.zip" -print -quit)
+        img_file=$(find "${{ env.OUTPUT_DIR }}" -name "*.img" -print -quit)
+        zip_file=$(find "${{ env.OUTPUT_DIR }}" -name "PBRP*.zip" -print -quit)
         if [ -f "$img_file" ]; then
             echo "CHECK_IMG_IS_OK=true" >> $GITHUB_ENV
             echo "MD5_IMG=$(md5sum "$img_file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
@@ -192,7 +192,7 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         files: |
-          ${{ env.OUTPUT_DIR }}/${{ inputs.BUILD_TARGET }}.img
+          ${{ env.OUTPUT_DIR }}/*.img
           ${{ env.OUTPUT_DIR }}/PBRP*.zip
           ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
         name: Unofficial PBRP for ${{ inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
