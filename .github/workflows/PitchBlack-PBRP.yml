@@ -192,7 +192,11 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         files: |
-          ${{ env.OUTPUT_DIR }}/*.img
+          if [ "${{ inputs.BUILD_TARGET }}" != "pbrp" ]; then
+            ${{ env.OUTPUT_DIR }}/${{ inputs.BUILD_TARGET }}*.img
+          else
+            ${{ env.OUTPUT_DIR }}/recovery*.img
+          fi
           ${{ env.OUTPUT_DIR }}/PBRP*.zip
           ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
         name: Unofficial PBRP for ${{ inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
