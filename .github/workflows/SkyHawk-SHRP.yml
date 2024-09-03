@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       MANIFEST:
-        description: 'SHRP Manifest'
+        description: 'SHRP Manifest (Use old SHRP manifest for 9.0)'
         required: true
         default: 'https://github.com/SHRP-Reborn/manifest.git'
       MANIFEST_BRANCH:
