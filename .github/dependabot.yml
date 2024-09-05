@@ -4,4 +4,4 @@ updates:
   - package-ecosystem: "github-actions" # This specifies that you want to update GitHub Actions.
     directory: ".github/workflows"                      # The directory where your workflow files are located.
     schedule:
-      cron: "0 0 1 1 *"
+      interval: "monthly"
