@@ -12,11 +12,6 @@ on:
         - android-14.0
         - android-12.1
         - android-11.0
-        - android-10.0
-        - android-9.0
-        - android-8.1
-        - android-7.1
-        - android-6.0
       DEVICE_TREE:
         description: 'Custom Recovery Tree' # Your already made Device Tree for TWRP
         required: true
@@ -109,7 +104,7 @@ jobs:
         pushd android-recovery
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-        repo init --depth=1 -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b ${{ inputs.MANIFEST_BRANCH }}
+        repo init --depth=1 -u https://github.com/mlm-games/manifest_pb.git -b ${{ inputs.MANIFEST_BRANCH }}
         popd
 
     - name: Repo Sync
