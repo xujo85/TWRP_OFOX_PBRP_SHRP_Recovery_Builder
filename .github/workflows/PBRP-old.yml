@@ -156,6 +156,7 @@ jobs:
     - name: Building PitchBlack
       run: |
         pushd android-recovery
+        ls -l vendor/pb/
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
         if [ "${{ inputs.BUILD_TARGET }}" != "pbrp" ]; then
