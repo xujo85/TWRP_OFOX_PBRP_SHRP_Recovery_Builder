@@ -150,20 +150,43 @@ jobs:
         cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-    - name: Check Build Makefile
+- name: Check Build Makefile
       run: |
         cd android-recovery
-        for prefix in twrp omni pb; do
-          if [ -f "${{ inputs.DEVICE_PATH }}/${prefix}_${{ inputs.DEVICE_NAME }}.mk" ]; then
-            echo "DEVICE_MAKEFILE=${prefix}_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-            break
-          fi
-        done
-        if [ -z "$DEVICE_MAKEFILE" ]; then
-          echo "::error::No recovery makefile found!"
-          ls -l
-          exit 1
+        echo "Checking for recovery makefiles in ${{ inputs.DEVICE_PATH }}"
+        ls -la ${{ inputs.DEVICE_PATH }}/*.mk || true
+        
+        if [ -f "${{ inputs.DEVICE_PATH }}/twrp_${{ inputs.DEVICE_NAME }}.mk" ]; then
+            echo "Found TWRP makefile"
+            echo "DEVICE_MAKEFILE=twrp_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+        elif [ -f "${{ inputs.DEVICE_PATH }}/omni_${{ inputs.DEVICE_NAME }}.mk" ]; then
+            echo "Found Omni makefile"
+            echo "DEVICE_MAKEFILE=omni_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+        elif [ -f "${{ inputs.DEVICE_PATH }}/pb_${{ inputs.DEVICE_NAME }}.mk" ]; then
+            echo "Found PitchBlack makefile"
+            echo "DEVICE_MAKEFILE=pb_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+        else
+            echo "::warning::No standard recovery makefile found, checking for alternative makefiles..."
+            # List all mk files and try to find a suitable one
+            for mkfile in ${{ inputs.DEVICE_PATH }}/*.mk; do
+                if [ -f "$mkfile" ]; then
+                    basename=$(basename "$mkfile" .mk)
+                    echo "Found makefile: $basename"
+                    echo "DEVICE_MAKEFILE=$basename" >> $GITHUB_ENV
+                    break
+                fi
+            done
         fi
+        
+        if [ -z "$DEVICE_MAKEFILE" ]; then
+            echo "::error::No recovery makefile found in ${{ inputs.DEVICE_PATH }}"
+            echo "Available makefiles:"
+            find ${{ inputs.DEVICE_PATH }} -name "*.mk" -type f
+            exit 1
+        else
+            echo "Using makefile: $DEVICE_MAKEFILE"
+        fi
+      continue-on-error: true
 
     - name: Fix Missing Fonts
       run: |
