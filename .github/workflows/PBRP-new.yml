@@ -150,7 +150,7 @@ jobs:
         cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-- name: Check Build Makefile
+    - name: Check Build Makefile
       run: |
         cd android-recovery
         echo "Checking for recovery makefiles in ${{ inputs.DEVICE_PATH }}"
