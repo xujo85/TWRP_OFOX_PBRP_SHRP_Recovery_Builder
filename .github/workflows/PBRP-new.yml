@@ -1,0 +1,275 @@
+name: PitchBlack Recovery Project Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      MANIFEST_BRANCH:
+        description: 'PBRP Manifest Branch'
+        required: true
+        default: 'android-12.1'
+        type: choice
+        options:
+        - android-14.0
+        - android-12.1
+        - android-11.0
+        - android-10.0
+        - android-9.0
+        - android-8.1
+        - android-7.1
+        - android-6.0
+      DEVICE_TREE:
+        description: 'Custom Recovery Tree URL'
+        required: true
+        default: 'https://github.com/enter_username/repo_name'
+      DEVICE_TREE_BRANCH:
+        description: 'Device Tree Branch'
+        required: true
+        default: 'main'
+      DEVICE_NAME:
+        description: 'Device Codename'
+        required: true
+      DEVICE_PATH:
+        description: 'Device Path (from BoardConfig.mk)'
+        required: true
+        default: 'device/manufacturer/codename'
+      BUILD_TARGET:
+        description: 'Build Target (use "pbrp" for Android 11+)'
+        required: true
+        default: 'recovery'
+        type: choice
+        options:
+        - pbrp
+        - recovery
+        - boot
+        - vendorboot
+      LDCHECK:
+        description: 'Run dependency check'
+        required: false
+        default: false
+        type: boolean
+      LDCHECKPATH:
+        description: 'Path for dependency check'
+        required: true
+        default: 'system/bin/qseecomd'
+
+jobs:
+  build:
+    name: Build PBRP by ${{ github.actor }}
+    runs-on: ubuntu-20.04
+    if: github.event.repository.owner.id == github.event.sender.id
+    
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OUTPUT_DIR: ${{ github.workspace }}/android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}
+      DEBIAN_FRONTEND: noninteractive
+      
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Initial Setup
+      run: |
+        echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
+        echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
+
+    - name: Check Out
+      uses: actions/checkout@v4
+
+    - name: Cleanup
+      uses: rokibhasansagar/slimhub_actions@main
+      
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 24
+
+    - name: Check Manifest Branch
+      run: |
+        if [[ "${{ inputs.MANIFEST_BRANCH }}" =~ ^android-(11.0|12.1)$ ]]; then
+          echo "CHECK_LEGACY_BRANCH=false" >> $GITHUB_ENV
+        else
+          echo "CHECK_LEGACY_BRANCH=true" >> $GITHUB_ENV
+        fi
+
+    - name: Prepare Build Environment
+      run: |
+        sudo add-apt-repository universe
+        sudo apt update
+        sudo apt -y upgrade
+        sudo apt -y install \
+          gperf gcc-multilib gcc-10-multilib g++-multilib g++-10-multilib \
+          libc6-dev lib32ncurses5-dev x11proto-core-dev libx11-dev tree \
+          lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc bc ccache \
+          lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev \
+          libsdl1.2-dev libwxgtk3.0-gtk3-dev libxml2 lzop pngcrush \
+          schedtool squashfs-tools imagemagick libbz2-dev lzma ncftp \
+          qemu-user-static libstdc++-10-dev libtinfo5 libgflags-dev \
+          libncurses5 python3 python2 python-is-python2
+
+    - name: Install OpenJDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '8'
+
+    - name: Setup Git and Repo
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        sudo ln -sf ~/bin/repo /usr/bin/repo
+
+    - name: Initialize Repo
+      run: |
+        mkdir -p android-recovery
+        cd android-recovery
+        repo init --depth=1 -u https://github.com/mlm-games/manifest_pb.git -b ${{ inputs.MANIFEST_BRANCH }}
+
+    - name: Repo Sync
+      run: |
+        cd android-recovery
+        repo sync -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+    - name: Clone Device Tree
+      run: |
+        cd android-recovery
+        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
+        cd ${{ inputs.DEVICE_PATH }}
+        echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+    - name: Check Build Makefile
+      run: |
+        cd android-recovery
+        for prefix in twrp omni pb; do
+          if [ -f "${{ inputs.DEVICE_PATH }}/${prefix}_${{ inputs.DEVICE_NAME }}.mk" ]; then
+            echo "DEVICE_MAKEFILE=${prefix}_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
+            break
+          fi
+        done
+        if [ -z "$DEVICE_MAKEFILE" ]; then
+          echo "::error::No recovery makefile found!"
+          exit 1
+        fi
+
+    - name: Fix Missing Fonts
+      run: |
+        cd android-recovery
+        mkdir -p external/noto-fonts/other
+        cd external/noto-fonts/other
+        wget https://github.com/cd-Crypton/custom-recovery-extras/raw/main/missing-font.zip
+        unzip -o missing-font.zip
+
+    - name: Build PitchBlack Recovery
+      run: |
+        cd android-recovery
+        source build/envsetup.sh
+        export ALLOW_MISSING_DEPENDENCIES=true
+        if [ "${{ inputs.BUILD_TARGET }}" != "pbrp" ]; then
+          lunch ${{ env.DEVICE_MAKEFILE }}-eng
+          mka ${{ inputs.BUILD_TARGET }}image
+        else
+          lunch ${{ env.DEVICE_MAKEFILE }}-eng
+          mka ${{ inputs.BUILD_TARGET }}
+        fi
+
+    - name: Check Build Outputs
+      if: always()
+      run: |
+        cd "${{ env.OUTPUT_DIR }}"
+        for file in $(find . -type f \( -name "*.img" -o -name "PBRP*.zip" \)); do
+          if [ -f "$file" ]; then
+            echo "$(basename ${file})_EXISTS=true" >> $GITHUB_ENV
+            echo "$(basename ${file})_MD5=$(md5sum "$file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
+          fi
+        done
+
+    - name: Upload to Release
+      if: success()
+      uses: softprops/action-gh-release@master
+      with:
+        files: |
+          ${{ env.OUTPUT_DIR }}/*.img
+          ${{ env.OUTPUT_DIR }}/PBRP*.zip
+          ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
+        name: PBRP for ${{ inputs.DEVICE_NAME }} - ${{ env.BUILD_DATE }}
+        tag_name: ${{ github.run_id }}
+        body: |
+          ## Build Information
+          - **Build Date:** ${{ env.BUILD_DATE }}
+          - **Branch:** ${{ inputs.MANIFEST_BRANCH }}
+          - **Device:** ${{ inputs.DEVICE_NAME }}
+          - **Build Type:** ${{ inputs.BUILD_TARGET }}
+          
+          ## Source Information
+          - **Device Tree:** [${{ inputs.DEVICE_TREE }}](${{ inputs.DEVICE_TREE }}/tree/${{ inputs.DEVICE_TREE_BRANCH }})
+          - **Branch:** ${{ inputs.DEVICE_TREE_BRANCH }}
+          - **Commit:** [${{ env.COMMIT_ID }}](${{ inputs.DEVICE_TREE }}/commit/${{ env.COMMIT_ID }})
+          
+          ## Build Status
+          - Recovery Image MD5: `${{ env.MD5_IMG }}`
+          - ZIP Package MD5: `${{ env.MD5_ZIP }}`
+          
+          > Note: This is an automated build. Please test thoroughly before using.
+        prerelease: true
+        draft: false
+
+    - name: Run LDCheck
+      if: inputs.LDCHECK == true
+      run: |
+        cd android-recovery
+        if [ ! -d "tools" ]; then
+          echo "::error::Tools directory not found"
+          exit 1
+        fi
+        
+        # Setup LDCheck environment
+        RECOVERY_ROOT="${OUTPUT_DIR}/${inputs.DEVICE_NAME}/recovery/root"
+        mkdir -p "${RECOVERY_ROOT}"
+        
+        # Copy required files
+        cp tools/libneeds "${RECOVERY_ROOT}/"
+        cp tools/ldcheck "${RECOVERY_ROOT}/"
+        
+        # Run LDCheck
+        cd "${RECOVERY_ROOT}"
+        python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
+        
+        echo "LDCheck completed. Please review the results and update your device tree accordingly."
+      continue-on-error: true
+
+    - name: Calculate Build Time
+      if: always()
+      run: |
+        BUILD_END=$(date +%s)
+        BUILD_DURATION=$((BUILD_END - BUILD_START))
+        
+        hours=$((BUILD_DURATION / 3600))
+        minutes=$(((BUILD_DURATION % 3600) / 60))
+        seconds=$((BUILD_DURATION % 60))
+        
+        echo "Build completed in ${hours}h ${minutes}m ${seconds}s"
+        
+        # Save build statistics
+        echo "BUILD_DURATION=${BUILD_DURATION}" >> $GITHUB_ENV
+        echo "BUILD_HOURS=${hours}" >> $GITHUB_ENV
+        echo "BUILD_MINUTES=${minutes}" >> $GITHUB_ENV
+        echo "BUILD_SECONDS=${seconds}" >> $GITHUB_ENV
+
+    - name: Upload Build Logs
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs-${{ inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}
+        path: |
+          ${{ env.OUTPUT_DIR }}/*.log
+          ${{ env.OUTPUT_DIR }}/log
+        retention-days: 5
+
+    - name: Cleanup Workspace
+      if: always()
+      run: |
+        cd ${{ github.workspace }}
+        rm -rf android-recovery
+        df -h
