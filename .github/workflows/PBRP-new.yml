@@ -121,11 +121,22 @@ jobs:
         chmod a+x ~/bin/repo
         sudo ln -sf ~/bin/repo /usr/bin/repo
 
+    - name: Set Manifest Source
+      run: |
+        ANDROID_VERSION=$(echo "${{ inputs.MANIFEST_BRANCH }}" | cut -d'-' -f2)
+        if (( $(echo "$ANDROID_VERSION < 10.0" | bc -l) )); then
+          echo "MANIFEST_URL=https://github.com/mlm-games/manifest_pb.git" >> $GITHUB_ENV
+        else
+          echo "MANIFEST_URL=https://github.com/PitchBlackRecoveryProject/manifest_pb.git" >> $GITHUB_ENV
+        fi
+
     - name: Initialize Repo
       run: |
         mkdir -p android-recovery
         cd android-recovery
-        repo init --depth=1 -u https://github.com/mlm-games/manifest_pb.git -b ${{ inputs.MANIFEST_BRANCH }}
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+        repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ inputs.MANIFEST_BRANCH }}
 
     - name: Repo Sync
       run: |
@@ -215,29 +226,11 @@ jobs:
         prerelease: true
         draft: false
 
-    - name: Run LDCheck
-      if: inputs.LDCHECK == true
-      run: |
-        cd android-recovery
-        if [ ! -d "tools" ]; then
-          echo "::error::Tools directory not found"
-          exit 1
-        fi
-        
-        # Setup LDCheck environment
-        RECOVERY_ROOT="${OUTPUT_DIR}/${inputs.DEVICE_NAME}/recovery/root"
-        mkdir -p "${RECOVERY_ROOT}"
-        
-        # Copy required files
-        cp tools/libneeds "${RECOVERY_ROOT}/"
-        cp tools/ldcheck "${RECOVERY_ROOT}/"
-        
-        # Run LDCheck
-        cd "${RECOVERY_ROOT}"
-        python3 ldcheck -p system/lib64:vendor/lib64:system/lib:vendor/lib -d ${{ inputs.LDCHECKPATH }}
-        
-        echo "LDCheck completed. Please review the results and update your device tree accordingly."
-      continue-on-error: true
+    - name: Run LDCHECK
+      uses: mlm-games/ldcheck-action@main
+      with:
+        OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
+        LDCHECKPATH: 'vendor/bin/teei_daemon'
 
     - name: Calculate Build Time
       if: always()
