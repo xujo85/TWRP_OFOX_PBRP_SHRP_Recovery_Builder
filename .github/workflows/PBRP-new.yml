@@ -94,7 +94,6 @@ jobs:
         files: |
           ${{ env.OUTPUT_DIR }}/*.img
           ${{ env.OUTPUT_DIR }}/PBRP*.zip
-          ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
         name: PBRP for ${{ inputs.DEVICE_NAME }} - ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
@@ -141,16 +140,6 @@ jobs:
         echo "BUILD_HOURS=${hours}" >> $GITHUB_ENV
         echo "BUILD_MINUTES=${minutes}" >> $GITHUB_ENV
         echo "BUILD_SECONDS=${seconds}" >> $GITHUB_ENV
-
-    - name: Upload Build Logs
-      if: failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-logs-${{ env.DEVICE_NAME }}-${{ env.BUILD_DATE }}
-        path: |
-          ${{ env.OUTPUT_DIR }}/*.log
-          ${{ env.OUTPUT_DIR }}/log
-        retention-days: 5
 
     - name: Cleanup Workspace
       if: always()
