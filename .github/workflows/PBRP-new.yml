@@ -46,9 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.repository.owner.id == github.event.sender.id
     env:
-      OUTPUT_DIR: ${{ github.workspace }}/android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}
       DEBIAN_FRONTEND: noninteractive
-      
     permissions:
       contents: write
       
@@ -148,7 +146,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v3
       with:
-        name: build-logs-${{ inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}
+        name: build-logs-${{ env.DEVICE_NAME }}-${{ env.BUILD_DATE }}
         path: |
           ${{ env.OUTPUT_DIR }}/*.log
           ${{ env.OUTPUT_DIR }}/log
