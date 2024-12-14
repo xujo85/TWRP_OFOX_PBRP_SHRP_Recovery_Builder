@@ -219,20 +219,17 @@ jobs:
             echo "$(basename ${file})_MD5=$(md5sum "$file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
           fi
         done
-
-    - name: Upload to Release
-      if: github.event_name == 'workflow_dispatch' && env.UPLOAD_RELEASES == 'true'
-      uses: softprops/action-gh-release@v2
+        
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      if: inputs.upload_releases == false || github.event_name != 'workflow_dispatch'
       with:
-        files: |
+        name: TWRP-Recovery-${{ env.DEVICE_NAME }}-${{ env.COMMIT_SHORT }}
+        path: |
           ${{ env.OUTPUT_DIR }}/*.img
           ${{ env.OUTPUT_DIR }}/*.tar
           ${{ env.OUTPUT_DIR }}/*vbmeta*
-          ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
-        name: "TWRP Recovery for ${{ env.DEVICE_NAME }} | ${{ env.BUILD_DATE }}"
-        tag_name: ${{ env.DEVICE_NAME }}-${{ env.COMMIT_SHORT }}
-        body: |
-          ## 📱 TWRP Recovery for ${{ env.DEVICE_NAME }}
+          ${{ env.OUTPUT_DIR }}/*.cpio
 
     - name: Upload to Release
       if: success()
