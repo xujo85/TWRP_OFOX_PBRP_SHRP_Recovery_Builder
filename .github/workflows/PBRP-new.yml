@@ -50,16 +50,14 @@ on:
       LDCHECKPATH:
         description: 'Path for dependency check'
         required: true
-        default: 'system/bin/qseecomd'
+        default: 'recovery/root/system/bin/qseecomd'
 
 jobs:
   build:
     name: Build PBRP by ${{ github.actor }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.event.repository.owner.id == github.event.sender.id
-    
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       OUTPUT_DIR: ${{ github.workspace }}/android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}
       DEBIAN_FRONTEND: noninteractive
       
@@ -71,156 +69,28 @@ jobs:
       run: |
         echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
         echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
-
-    - name: Check Out
+        
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Cleanup
+    - name: Clean-up
       uses: rokibhasansagar/slimhub_actions@main
-      
-    - name: Set Swap Space
+
+    - name: Swap Space   # Easier
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 24
 
-    - name: Check Manifest Branch
-      run: |
-        if [[ "${{ inputs.MANIFEST_BRANCH }}" =~ ^android-(11.0|12.1)$ ]]; then
-          echo "CHECK_LEGACY_BRANCH=false" >> $GITHUB_ENV
-        else
-          echo "CHECK_LEGACY_BRANCH=true" >> $GITHUB_ENV
-        fi
-
-    - name: Prepare Build Environment
-      run: |
-        sudo add-apt-repository universe
-        sudo apt update
-        sudo apt -y upgrade
-        sudo apt -y install \
-          gperf gcc-multilib gcc-10-multilib g++-multilib g++-10-multilib \
-          libc6-dev lib32ncurses5-dev x11proto-core-dev libx11-dev tree \
-          lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc bc ccache \
-          lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev \
-          libsdl1.2-dev libwxgtk3.0-gtk3-dev libxml2 lzop pngcrush \
-          schedtool squashfs-tools imagemagick libbz2-dev lzma ncftp \
-          qemu-user-static libstdc++-10-dev libtinfo5 libgflags-dev \
-          libncurses5 python3
-
-    - name: Install OpenJDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '8'
-
-    - name: Setup Git and Repo
-      run: |
-        git config --global user.name "${{ github.actor }}"
-        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-        mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-        chmod a+x ~/bin/repo
-        sudo ln -sf ~/bin/repo /usr/bin/repo
-
-    - name: Set Manifest Source
-      run: |
-        ANDROID_VERSION=$(echo "${{ inputs.MANIFEST_BRANCH }}" | cut -d'-' -f2)
-        if (( $(echo "$ANDROID_VERSION < 10.0" | bc -l) )); then
-          echo "MANIFEST_URL=https://github.com/mlm-games/manifest_pb.git" >> $GITHUB_ENV
-          sudo apt install python2 python-is-python2
-        else
-          echo "MANIFEST_URL=https://github.com/PitchBlackRecoveryProject/manifest_pb.git" >> $GITHUB_ENV
-        fi
-
-    - name: Initialize Repo
-      run: |
-        mkdir -p android-recovery
-        cd android-recovery
-        git config --global user.name "${{ github.actor }}"
-        git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-        repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ inputs.MANIFEST_BRANCH }}
-
-    - name: Repo Sync
-      run: |
-        cd android-recovery
-        repo sync -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
-
-    - name: Clone Device Tree
-      run: |
-        cd android-recovery
-        git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
-        cd ${{ inputs.DEVICE_PATH }}
-        echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
-    - name: Check Build Makefile
-      run: |
-        cd android-recovery
-        echo "Checking for recovery makefiles in ${{ inputs.DEVICE_PATH }}"
-        ls -la ${{ inputs.DEVICE_PATH }}/*.mk || true
-        
-        if [ -f "${{ inputs.DEVICE_PATH }}/twrp_${{ inputs.DEVICE_NAME }}.mk" ]; then
-            echo "Found TWRP makefile"
-            echo "DEVICE_MAKEFILE=twrp_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        elif [ -f "${{ inputs.DEVICE_PATH }}/omni_${{ inputs.DEVICE_NAME }}.mk" ]; then
-            echo "Found Omni makefile"
-            echo "DEVICE_MAKEFILE=omni_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        elif [ -f "${{ inputs.DEVICE_PATH }}/pb_${{ inputs.DEVICE_NAME }}.mk" ]; then
-            echo "Found PitchBlack makefile"
-            echo "DEVICE_MAKEFILE=pb_${{ inputs.DEVICE_NAME }}" >> $GITHUB_ENV
-        else
-            echo "::warning::No standard recovery makefile found, checking for alternative makefiles..."
-            # List all mk files and try to find a suitable one
-            for mkfile in ${{ inputs.DEVICE_PATH }}/*.mk; do
-                if [ -f "$mkfile" ]; then
-                    basename=$(basename "$mkfile" .mk)
-                    echo "Found makefile: $basename"
-                    echo "DEVICE_MAKEFILE=$basename" >> $GITHUB_ENV
-                    break
-                fi
-            done
-        fi
-        
-        if [ -z "$DEVICE_MAKEFILE" ]; then
-            echo "::error::No recovery makefile found in ${{ inputs.DEVICE_PATH }}"
-            echo "Available makefiles:"
-            find ${{ inputs.DEVICE_PATH }} -name "*.mk" -type f
-            exit 1
-        else
-            echo "Using makefile: $DEVICE_MAKEFILE"
-        fi
-      continue-on-error: true
-
-    - name: Fix Missing Fonts
-      run: |
-        cd android-recovery
-        mkdir -p external/noto-fonts/other
-        cd external/noto-fonts/other
-        wget https://github.com/cd-Crypton/custom-recovery-extras/raw/main/missing-font.zip
-        unzip -o missing-font.zip
-
     - name: Build PitchBlack Recovery
-      run: |
-        cd android-recovery
-        source build/envsetup.sh
-        export ALLOW_MISSING_DEPENDENCIES=true
-        if [ "${{ inputs.BUILD_TARGET }}" != "pbrp" ]; then
-          lunch ${{ env.DEVICE_MAKEFILE }}-eng
-          mka ${{ inputs.BUILD_TARGET }}image
-        else
-          lunch ${{ env.DEVICE_MAKEFILE }}-eng
-          mka ${{ inputs.BUILD_TARGET }}
-        fi
+      uses: mlm-games/pitchblack-pbrp-builder-action@main
+      id: build
+      with:
+        MANIFEST_BRANCH: 'android-12.1'
+        DEVICE_TREE: 'https://github.com/mlm-games/twrp_galaxy_m02s'
+        DEVICE_TREE_BRANCH: 'pbrp'
+        BUILD_TARGET: 'pbrp'
 
-    - name: Check Build Outputs
-      if: always()
-      run: |
-        cd "${{ env.OUTPUT_DIR }}"
-        for file in $(find . -type f \( -name "*.img" -o -name "PBRP*.zip" \)); do
-          if [ -f "$file" ]; then
-            echo "$(basename ${file})_EXISTS=true" >> $GITHUB_ENV
-            echo "$(basename ${file})_MD5=$(md5sum "$file" | cut -d ' ' -f 1)" >> $GITHUB_ENV
-          fi
-        done
-        
+  
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       if: inputs.upload_releases == false || github.event_name != 'workflow_dispatch'
@@ -266,7 +136,7 @@ jobs:
       uses: mlm-games/ldcheck-action@main
       with:
         OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
-        LDCHECKPATH: 'vendor/bin/teei_daemon'
+        LDCHECKPATH: ${{ inputs.LDCHECK_PATH }}
 
     - name: Calculate Build Time
       if: always()
