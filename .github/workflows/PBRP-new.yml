@@ -104,7 +104,7 @@ jobs:
           libsdl1.2-dev libwxgtk3.0-gtk3-dev libxml2 lzop pngcrush \
           schedtool squashfs-tools imagemagick libbz2-dev lzma ncftp \
           qemu-user-static libstdc++-10-dev libtinfo5 libgflags-dev \
-          libncurses5 python3 python2 python-is-python2
+          libncurses5 python3
 
     - name: Install OpenJDK
       uses: actions/setup-java@v4
@@ -126,6 +126,7 @@ jobs:
         ANDROID_VERSION=$(echo "${{ inputs.MANIFEST_BRANCH }}" | cut -d'-' -f2)
         if (( $(echo "$ANDROID_VERSION < 10.0" | bc -l) )); then
           echo "MANIFEST_URL=https://github.com/mlm-games/manifest_pb.git" >> $GITHUB_ENV
+          sudo apt install python2 python-is-python2
         else
           echo "MANIFEST_URL=https://github.com/PitchBlackRecoveryProject/manifest_pb.git" >> $GITHUB_ENV
         fi
