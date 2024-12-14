@@ -23,15 +23,8 @@ on:
         default: 'https://github.com/enter_username/repo_name'
       DEVICE_TREE_BRANCH:
         description: 'Device Tree Branch'
-        required: true
-        default: 'main'
-      DEVICE_NAME:
-        description: 'Device Codename'
-        required: true
-      DEVICE_PATH:
-        description: 'Device Path (from BoardConfig.mk)'
-        required: true
-        default: 'device/manufacturer/codename'
+        required: false
+        default: ''
       BUILD_TARGET:
         description: 'Build Target (use "pbrp" for Android 11+)'
         required: true
@@ -42,14 +35,9 @@ on:
         - recovery
         - boot
         - vendorboot
-      LDCHECK:
-        description: 'Run dependency check'
+      LDCHECK_PATH:
+        description: 'Path for dependency check (optional)'
         required: false
-        default: false
-        type: boolean
-      LDCHECKPATH:
-        description: 'Path for dependency check'
-        required: true
         default: 'recovery/root/system/bin/qseecomd'
 
 jobs:
@@ -85,11 +73,10 @@ jobs:
       uses: mlm-games/pitchblack-pbrp-builder-action@main
       id: build
       with:
-        MANIFEST_BRANCH: 'android-12.1'
-        DEVICE_TREE: 'https://github.com/mlm-games/twrp_galaxy_m02s'
-        DEVICE_TREE_BRANCH: 'pbrp'
-        BUILD_TARGET: 'pbrp'
-
+        MANIFEST_BRANCH: ${{ inputs.MANIFEST_BRANCH }}
+        DEVICE_TREE:  ${{ inputs.DEVICE_TREE }}
+        DEVICE_TREE_BRANCH:  ${{ inputs.DEVICE_TREE_BRANCH }}
+        BUILD_TARGET:  ${{ inputs.BUILD_TARGET }}
   
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -137,6 +124,7 @@ jobs:
       with:
         OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
         LDCHECKPATH: ${{ inputs.LDCHECK_PATH }}
+      continue-on-error: true
 
     - name: Calculate Build Time
       if: always()
