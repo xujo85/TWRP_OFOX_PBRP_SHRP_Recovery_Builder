@@ -22,7 +22,7 @@ on:
         required: true
         default: 'https://github.com/enter_username/repo_name'
       DEVICE_TREE_BRANCH:
-        description: 'Device Tree Branch'
+        description: 'Device Tree Branch (optional)'
         required: false
         default: ''
       BUILD_TARGET:
