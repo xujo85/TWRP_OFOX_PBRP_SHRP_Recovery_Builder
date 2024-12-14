@@ -221,6 +221,20 @@ jobs:
         done
 
     - name: Upload to Release
+      if: github.event_name == 'workflow_dispatch' && env.UPLOAD_RELEASES == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ${{ env.OUTPUT_DIR }}/*.img
+          ${{ env.OUTPUT_DIR }}/*.tar
+          ${{ env.OUTPUT_DIR }}/*vbmeta*
+          ${{ env.OUTPUT_DIR }}/ramdisk-recovery.*
+        name: "TWRP Recovery for ${{ env.DEVICE_NAME }} | ${{ env.BUILD_DATE }}"
+        tag_name: ${{ env.DEVICE_NAME }}-${{ env.COMMIT_SHORT }}
+        body: |
+          ## 📱 TWRP Recovery for ${{ env.DEVICE_NAME }}
+
+    - name: Upload to Release
       if: success()
       uses: softprops/action-gh-release@master
       with:
