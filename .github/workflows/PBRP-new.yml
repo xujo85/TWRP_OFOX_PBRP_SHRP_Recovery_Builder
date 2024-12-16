@@ -80,7 +80,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: inputs.upload_releases == false || github.event_name != 'workflow_dispatch'
       with:
-        name: TWRP-Recovery-${{ env.DEVICE_NAME }}-${{ env.COMMIT_SHORT }}
+        name: PBRP-Recovery-${{ env.DEVICE_NAME }}-${{ env.BUILD_DATE }}
         path: |
           ${{ env.OUTPUT_DIR }}/*.img
           ${{ env.OUTPUT_DIR }}/*.tar
@@ -106,14 +106,13 @@ jobs:
           ## Source Information
           - **Device Tree:** [${{ inputs.DEVICE_TREE }}](${{ inputs.DEVICE_TREE }}/tree/${{ inputs.DEVICE_TREE_BRANCH }})
           - **Branch:** ${{ inputs.DEVICE_TREE_BRANCH }}
-          - **Commit:** [${{ env.COMMIT_ID }}](${{ inputs.DEVICE_TREE }}/commit/${{ env.COMMIT_ID }})
           
           ## Build Status
           - Recovery Image MD5: `${{ env.MD5_IMG }}`
           - ZIP Package MD5: `${{ env.MD5_ZIP }}`
           
           > Note: This is an automated build. Please test thoroughly before using.
-        prerelease: true
+        prerelease: false
         draft: false
 
     - name: Run LDCHECK
