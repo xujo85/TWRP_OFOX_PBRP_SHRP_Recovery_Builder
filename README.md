@@ -27,9 +27,13 @@ If there are any issues relating the build tree info (not the workflow file conf
 
 ## Notes
 
-- Some of PBRP's branches have missing pb_build.sh files (like 9.0), so the build will fail, but you can still flash the recovery.img and it will be uploaded to releases. For the .zips, you can go to PBRP's vendor utils repo and find them there in PBRP/tools (location might wary).
-- Why ubuntu-20.04 for some workflows? Because python-is-python2 is replaced with python-is-python3 past 20.04.
 - If you created your account on GitHub.com after July 18, 2017, your noreply email address for GitHub is an ID number and your username in the form of ID+USERNAME@users.noreply.github.com. If you created your account on GitHub.com prior to July 18, 2017, and enabled Keep my email address private prior to that date, your noreply email address from GitHub is USERNAME@users.noreply.github.com. You can get an ID-based noreply email address for GitHub by selecting (or deselecting and reselecting) Keep my email address private in your email settings.
+
+### Old notes ( Not relevant anymore )
+
+> - Some of PBRP's branches have missing pb_build.sh files (like 9.0), so the build will fail, but you can still flash the recovery.img and it will be uploaded to releases. For the .zips, you can go to PBRP's vendor utils repo and find them there in PBRP/tools (location might wary).
+> - Why ubuntu-20.04 for some workflows? Because python-is-python2 is replaced with python-is-python3 past 20.04.
+
 
 ## Thanks/Credits
  - [CaptainThrowback](https://github.com/CaptainThrowback)
