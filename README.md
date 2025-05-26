@@ -19,7 +19,7 @@ If there are any issues relating the build tree info (not the workflow file conf
 
 ## About LDCHECK
 
-  You can use LDCHECK to get info about dependencies or drivers that are missing for encryption, and help in looking about which drivers would be needed from your root folders. 
+  You can use LDCHECK to get info about dependencies or drivers that are missing for encryption, and help in looking for the drivers which would be needed from your root folders. 
   You can check out the wiki (Currently WIP, planning to BoardConfig flags based on manifest-branch, ways to debug (like finding .xml files), ) where you can add a path to a LDCHECK file,, as well as your device, processor info (might make it more specific later)
 
  - LDCHECK (path to your target binary file, ie. `system/bin/qseecomd`)
