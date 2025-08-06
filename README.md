@@ -14,7 +14,7 @@ If there are any issues relating the build tree info (not the workflow file conf
  - Manifest Branch (*12.1, *11.0, *10.0, *9.0, *8.1, *7.1, *6.0, 4.4 only for twrp, etc.)
  - Device Tree (Your device tree repository link)
  - Device Tree Branch (Your device tree repository branch)
- - Build Target (boot, reecovery, vendorboot)
+ - Build Target (boot, recovery, vendorboot)
 
 
 ## About LDCHECK
@@ -23,7 +23,7 @@ If there are any issues relating the build tree info (not the workflow file conf
   You can check out the wiki (Currently WIP, planning to BoardConfig flags based on manifest-branch, ways to debug (like finding .xml files), ) where you can add a path to a LDCHECK file,, as well as your device, processor info (might make it more specific later)
 
  - LDCHECK (path to your target binary file, ie. `system/bin/qseecomd`)
-   - If you are building manually/locally and you want to use ldcheck for checking dependencies, visit [THIS](https://github.com/TeamWin/android_device_qcom_twrp-common/tree/android-11#using-ldcheck-to-find-dependencies) this for guide.
+   - If you are building manually/locally and you want to use ldcheck for checking dependencies, visit [THIS](https://github.com/TeamWin/android_device_qcom_twrp-common/tree/android-11#using-ldcheck-to-find-dependencies) for guide.
 
 ## Notes
 
