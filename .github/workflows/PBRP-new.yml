@@ -43,10 +43,10 @@ on:
 jobs:
   build:
     name: Build PBRP by ${{ github.actor }}
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted]
     if: github.event.repository.owner.id == github.event.sender.id
     env:
-      DEBIAN_FRONTEND: noninteractive
+      UBUNTU_FRONTEND: noninteractive
     permissions:
       contents: write
       
@@ -55,12 +55,12 @@ jobs:
       run: |
         echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
         echo "BUILD_DATE=$(TZ=UTC date +%Y%m%d)" >> $GITHUB_ENV
+        export GIT_TRACE_PACKET=1
+        export GIT_TRACE=1
+        export GIT_CURL_VERBOSE=1
         
     - name: Checkout
       uses: actions/checkout@v5
-
-    - name: Clean-up
-      uses: rokibhasansagar/slimhub_actions@main
 
     - name: Swap Space   # Easier
       uses: pierotofy/set-swap-space@master
