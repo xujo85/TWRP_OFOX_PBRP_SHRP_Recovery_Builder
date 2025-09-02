@@ -61,7 +61,11 @@ jobs:
         
     - name: Checkout
       uses: actions/checkout@v5
-
+      with:
+          clean: 'false'
+          fetch-tags: 'true'
+          show-progress: 'true'
+          
     - name: Swap Space   # Easier
       uses: pierotofy/set-swap-space@master
       with:
