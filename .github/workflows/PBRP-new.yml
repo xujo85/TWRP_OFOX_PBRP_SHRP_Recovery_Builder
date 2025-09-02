@@ -72,7 +72,7 @@ jobs:
         swap-size-gb: 24
 
     - name: Build PitchBlack Recovery
-      uses: mlm-games/pitchblack-pbrp-builder-action@main
+      uses: xujo85/Pitchblack-PBRP-builder-action@main
       id: build
       with:
         MANIFEST_BRANCH: ${{ inputs.MANIFEST_BRANCH }}
